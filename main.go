@@ -64,10 +64,15 @@ func convert(csv string) (string, error) {
 }
 
 // Construct a separator line between the header line and data lines
-func constructSeparatorLine(colsCount int) string {
+func constructSeparatorLine(colsCount int, maxLens []int) string {
 	separatorLine := "| "
-	for range colsCount {
-		separatorLine += "- | "
+	for i := range colsCount {
+		dashes := ""
+		// loop through max length of each column and add dashes
+		for range maxLens[i] {
+			dashes += "-"
+		}
+		separatorLine += dashes + " | "
 	}
 	separatorLine += "\n"
 	return separatorLine
