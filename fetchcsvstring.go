@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 )
 
+// get CSV data from a URL. Will make a GET request with accepted content text/csv type
 func getCSVStringFromUrl(url string) (csvString string, err error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -33,6 +34,7 @@ func getCSVStringFromUrl(url string) (csvString string, err error) {
 	return csvFromUrl, nil
 }
 
+// read csv data from file. File must have .csv extension or else an error will be returned
 func getCSVStringFromPath(path string) (csvString string, err error) {
 	fileExtension := filepath.Ext(path)
 
