@@ -1,86 +1,114 @@
 package main
 
 import (
+	"encoding/csv"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 
 	"golang.design/x/clipboard"
 )
 
-const padLengthErrorString = "the length of the original string already exceeded desired length"
+var cfg Config
 
 func main() {
 
 	csvString := ""
 	var err error = nil
+
 	cfg, cfgErr := parseConfig()
 
 	if cfgErr != nil {
-		log.Fatalf("Configuration error: %s", cfgErr.Error())
+		slog.Error(fmt.Sprintf("Configuration error: %s\n", cfgErr.Error()))
+		return
 	}
 
-	// if http:
+	if cfg.VerboseLogging {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	}
+
+	sourceOfData := ""
+
+	// if csv from url
 	if cfg.URL != "" {
 		if cfg.VerboseLogging {
-			log.Println("Reading CSV from URL: " + cfg.URL)
+			slog.Info(fmt.Sprintf("Reading CSV from URL: %s\n", cfg.URL))
 		}
+		sourceOfData = cfg.URL
 		csvString, err = getCSVStringFromUrl(cfg.URL)
 	}
 
-	// if csv from file:
+	// if csv from file
 	if cfg.FilePath != "" {
 		if cfg.VerboseLogging {
-			log.Println("Reading from file path: " + cfg.FilePath)
+			slog.Debug(fmt.Sprintf("Reading from file path %s\n", cfg.FilePath))
 		}
+		sourceOfData = cfg.FilePath
 		csvString, err = getCSVStringFromPath(cfg.FilePath)
 	}
 
 	if err != nil {
-		log.Fatalln(err)
+		slog.Error(fmt.Sprintf("Error occurred when reading CSV from source.\nSource: %s\nError: %s", sourceOfData, err.Error()))
+		return
 	}
 
-	res, err := convert(csvString, cfg)
+	res, err := convert(csvString)
 
 	if err != nil {
-		fmt.Printf("An error occurred 🙄: %s\n", err.Error())
+		slog.Error(fmt.Sprintf("An error occurred 🙄: %s\n", err.Error()))
+		return
 	}
 
+	// auto-copy activated, copy the converted table to clipboard
+	// only warn if we failed to initiate clipboard module. Program should finish even if we had an error in this phase
 	if cfg.AutoCopy {
 		clipboardInitErr := clipboard.Init()
 		if clipboardInitErr != nil {
-			log.Fatalln("failed to initiate clipboard")
+			slog.Warn("Failed to initiate clipboard\n", "Initial error", clipboardInitErr)
 		}
 		clipboard.Write(clipboard.FmtText, []byte(res))
-		log.Println("Copied to clipboard 📋")
+		slog.Info("Copied to clipboard 📋\n")
 	}
 
-	fmt.Printf("Press Enter to continue...")
+	// output to window set to true, dump the table out to console
+	if cfg.OutputToWindow {
+		slog.Info("\n" + res + "\n")
+	}
+
+	slog.Info("Press Enter to continue...\n")
 	fmt.Scanln()
 }
 
 // convert csv string into a markdown table
-func convert(csv string, cfg Config) (string, error) {
-	if csv == "" {
+func convert(csvString string) (string, error) {
+	if csvString == "" {
 		return "", errors.New("empty CSV input")
 	}
+
+	r := csv.NewReader(strings.NewReader(csvString))
+	r.LazyQuotes = true
+	records, err := r.ReadAll()
+
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to parse CSV. Error: %s", err))
+	}
+
+	colCount := len(records[0])
 	result := ""
-	lines := strings.Split(csv, "\n")
-	colCount := getColumnCount(lines)
 
 	// max length of each column so we can beautify the table
-	maxLenOfCol := getMaxColumnLengths(lines, colCount)
+	maxLenOfCol := getMaxColumnLengths(records)
 
 	// constructing each data line
-	for idx := range len(lines) {
-		originalLine := strings.ReplaceAll(lines[idx], "\n", "")
+	for idx := range len(records) {
 		// array containing field values in the current line
-		colVals := strings.Split(originalLine, ",")
+		colVals := records[idx]
 		// fill empty column values with empty strings
 		for range colCount - len(colVals) {
 			colVals = append(colVals, "")
 		}
+
 		convertedLine := ""
 
 		for i := range colCount {
@@ -131,31 +159,13 @@ func constructSeparatorLine(colsCount int, maxLens []int) string {
 	return separatorLine
 }
 
-// Get the amount of columns in the csv file
-func getColumnCount(lines []string) int {
-	maxCol := 0
-	nrOfCols := 0
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-		nrOfCols = strings.Count(line, ",") + 1
-		if nrOfCols > maxCol {
-			maxCol = nrOfCols
-		}
-	}
-
-	return maxCol
-}
-
 // Get max length of each columns
-func getMaxColumnLengths(lines []string, colCount int) []int {
-	maxLens := make([]int, colCount)
-	for _, line := range lines {
-		colVals := strings.Split(line, ",")
-		for colIdx, colVal := range colVals {
-			if len(colVal) > maxLens[colIdx] {
-				maxLens[colIdx] = len(colVal)
+func getMaxColumnLengths(lines [][]string) []int {
+	maxLens := make([]int, len(lines[0]))
+	for _, fields := range lines {
+		for fieldIdx, fieldVal := range fields {
+			if len(fieldVal) > maxLens[fieldIdx] {
+				maxLens[fieldIdx] = len(fieldVal)
 			}
 		}
 	}
