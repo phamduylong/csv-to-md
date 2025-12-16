@@ -10,8 +10,6 @@ import (
 	"golang.design/x/clipboard"
 )
 
-var cfg Config
-
 func main() {
 
 	csvString := ""
@@ -40,12 +38,12 @@ func main() {
 	}
 
 	// if csv from file
-	if cfg.FilePath != "" {
+	if cfg.InputFilePath != "" {
 		if cfg.VerboseLogging {
-			slog.Debug(fmt.Sprintf("Reading from file path %s\n", cfg.FilePath))
+			slog.Debug(fmt.Sprintf("Reading from file path %s\n", cfg.InputFilePath))
 		}
-		sourceOfData = cfg.FilePath
-		csvString, err = getCSVStringFromPath(cfg.FilePath)
+		sourceOfData = cfg.InputFilePath
+		csvString, err = getCSVStringFromFile(cfg.InputFilePath)
 	}
 
 	if err != nil {
@@ -53,11 +51,18 @@ func main() {
 		return
 	}
 
-	res, err := convert(csvString)
+	res, err := convert(csvString, cfg)
 
 	if err != nil {
 		slog.Error(fmt.Sprintf("An error occurred 🙄: %s\n", err.Error()))
 		return
+	}
+
+	if cfg.OutputFilePath != "" {
+		err = writeMarkdownTableToFile(cfg.OutputFilePath, res)
+		if err != nil {
+			slog.Error(fmt.Sprintf("Failure when writing to output file: %s\n", err.Error()))
+		}
 	}
 
 	// auto-copy activated, copy the converted table to clipboard
@@ -81,7 +86,7 @@ func main() {
 }
 
 // convert csv string into a markdown table
-func convert(csvString string) (string, error) {
+func convert(csvString string, cfg Config) (string, error) {
 	if csvString == "" {
 		return "", errors.New("empty CSV input")
 	}
