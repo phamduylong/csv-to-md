@@ -19,14 +19,17 @@ const (
 type Config struct {
 	Align          Align
 	URL            string
-	FilePath       string
+	InputFilePath  string
+	OutputFilePath string
 	AutoCopy       bool
 	VerboseLogging bool
 	OutputToWindow bool
 }
 
 func parseConfig() (Config, error) {
-	pathPtr := flag.String("path", "", "Path of the CSV file to convert")
+	inputPathPtr := flag.String("inputFile", "", "Path of the CSV file to convert")
+	outputPathPtr := flag.String("outputFile", "",
+		"Path of the output file where converted data will be stored. ⚠️ Existing content will be overwritten")
 	urlPtr := flag.String("url", "", "URL of the CSV file to convert")
 	alignPtr := flag.Int("align", int(Center), "How should text be aligned in the table?\n0. Center\n1. Left\n2. Right")
 	autoCopyPtr := flag.Bool("autoCopy", false, "Should the converted markdown table be copied to clipboard automatically?")
@@ -37,7 +40,8 @@ func parseConfig() (Config, error) {
 	var cfg Config
 
 	cfg.Align = Align(*alignPtr)
-	cfg.FilePath = *pathPtr
+	cfg.InputFilePath = *inputPathPtr
+	cfg.OutputFilePath = *outputPathPtr
 	cfg.URL = *urlPtr
 	cfg.AutoCopy = *autoCopyPtr
 	cfg.VerboseLogging = *verboseLoggingPtr
@@ -65,10 +69,10 @@ func validateConfig(cfg Config) error {
 	if cfg.VerboseLogging {
 		slog.Debug("Validating config 🤔")
 	}
-	if cfg.URL != "" && cfg.FilePath != "" {
+	if cfg.URL != "" && cfg.InputFilePath != "" {
 		return errors.New("both URL and file path are given, please provide only one of them exclusively")
 	}
-	if cfg.URL == "" && cfg.FilePath == "" {
+	if cfg.URL == "" && cfg.InputFilePath == "" {
 		return errors.New("both URL and file path are missing, please provide either one of them exclusively")
 	}
 	if cfg.VerboseLogging {
