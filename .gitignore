@@ -33,3 +33,6 @@ go.work.sum
 
 # CSV files used for testing
 *.csv
+
+#output directory where output files are kept
+.output
