@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	"golang.design/x/clipboard"
 )
 
 func main() {
+	startTime := time.Now()
 
 	csvString := ""
 	var err error = nil
@@ -60,8 +62,10 @@ func main() {
 
 	// output to window set to true, dump the table out to console
 	if cfg.OutputToWindow {
-		slog.Info("\n" + res + "\n")
+		slog.Info("Converted table:\n" + res + "\n")
 	}
+
+	slog.Info(fmt.Sprintf("Elapsed time: %s", durationToReadableString(time.Since(startTime))))
 
 	slog.Info("Press Enter to continue...\n")
 	fmt.Scanln()
@@ -175,7 +179,7 @@ func getCSVStringFromSource(cfg Config) (csvString string, err error) {
 	// if csv from file
 	if cfg.InputFilePath != "" {
 		if cfg.VerboseLogging {
-			slog.Debug(fmt.Sprintf("Reading from file path %s\n", cfg.InputFilePath))
+			slog.Debug(fmt.Sprintf("Reading CSV from file: %s\n", cfg.InputFilePath))
 		}
 		sourceOfData = cfg.InputFilePath
 		csvString, err = getCSVStringFromFile(cfg.InputFilePath)
