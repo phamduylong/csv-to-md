@@ -26,28 +26,10 @@ func main() {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
-	sourceOfData := ""
-
-	// if csv from url
-	if cfg.URL != "" {
-		if cfg.VerboseLogging {
-			slog.Info(fmt.Sprintf("Reading CSV from URL: %s\n", cfg.URL))
-		}
-		sourceOfData = cfg.URL
-		csvString, err = getCSVStringFromUrl(cfg.URL)
-	}
-
-	// if csv from file
-	if cfg.InputFilePath != "" {
-		if cfg.VerboseLogging {
-			slog.Debug(fmt.Sprintf("Reading from file path %s\n", cfg.InputFilePath))
-		}
-		sourceOfData = cfg.InputFilePath
-		csvString, err = getCSVStringFromFile(cfg.InputFilePath)
-	}
+	csvString, err = getCSVStringFromSource(cfg)
 
 	if err != nil {
-		slog.Error(fmt.Sprintf("Error occurred when reading CSV from source.\nSource: %s\nError: %s", sourceOfData, err.Error()))
+		slog.Error(fmt.Sprintf("An error occurred when fetching data: %s\n", err.Error()))
 		return
 	}
 
@@ -176,4 +158,33 @@ func getMaxColumnLengths(lines [][]string) []int {
 	}
 
 	return maxLens
+}
+
+func getCSVStringFromSource(cfg Config) (csvString string, err error) {
+	sourceOfData := ""
+
+	// if csv from url
+	if cfg.URL != "" {
+		if cfg.VerboseLogging {
+			slog.Info(fmt.Sprintf("Reading CSV from URL: %s\n", cfg.URL))
+		}
+		sourceOfData = cfg.URL
+		csvString, err = getCSVStringFromUrl(cfg.URL)
+	}
+
+	// if csv from file
+	if cfg.InputFilePath != "" {
+		if cfg.VerboseLogging {
+			slog.Debug(fmt.Sprintf("Reading from file path %s\n", cfg.InputFilePath))
+		}
+		sourceOfData = cfg.InputFilePath
+		csvString, err = getCSVStringFromFile(cfg.InputFilePath)
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("failed to read CSV from source.\nSource: %s\nOriginal error: %s", sourceOfData, err.Error())
+	}
+
+	return csvString, nil
+
 }
