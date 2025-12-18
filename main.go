@@ -3,10 +3,12 @@ package main
 import (
 	"encoding/csv"
 	"errors"
+	"flag"
 	"fmt"
 	"log/slog"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"golang.design/x/clipboard"
 )
@@ -21,6 +23,9 @@ func main() {
 
 	if cfgErr != nil {
 		slog.Error(fmt.Sprintf("Configuration error: %s\n", cfgErr.Error()))
+		// user failed to run the program, let's run some help text
+		slog.Info("Example usage: ./csv-to-md.exe -inputFile=input.csv -outputToWindow -align=0 -autoCopy")
+		flag.PrintDefaults()
 		return
 	}
 
@@ -77,15 +82,15 @@ func convert(csvString string, cfg Config) (string, error) {
 		return "", errors.New("empty CSV input")
 	}
 
-	r := csv.NewReader(strings.NewReader(csvString))
-	r.LazyQuotes = true
-	records, err := r.ReadAll()
+	csvReader := createCSVReader(cfg, csvString)
+
+	records, err := csvReader.ReadAll()
 
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to parse CSV. Error: %s", err))
 	}
 
-	colCount := len(records[0])
+	colCount := csvReader.FieldsPerRecord
 	result := ""
 
 	// max length of each column so we can beautify the table
@@ -191,4 +196,15 @@ func getCSVStringFromSource(cfg Config) (csvString string, err error) {
 
 	return csvString, nil
 
+}
+
+func createCSVReader(cfg Config, csvString string) *csv.Reader {
+	r := csv.NewReader(strings.NewReader(csvString))
+	if cfg.Delimiter != 0 {
+		r.Comma = cfg.Delimiter
+	}
+
+	r.LazyQuotes = true
+
+	return r
 }
