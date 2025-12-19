@@ -13,6 +13,8 @@ import (
 	"golang.design/x/clipboard"
 )
 
+const EXAMPLE_COMMAND = "./csv-to-md.exe -inputFile=input.csv -outputToWindow -align=0 -autoCopy"
+
 func main() {
 	startTime := time.Now()
 
@@ -24,7 +26,7 @@ func main() {
 	if cfgErr != nil {
 		slog.Error(fmt.Sprintf("Configuration error: %s\n", cfgErr.Error()))
 		// user failed to run the program, let's run some help text
-		slog.Info("Example usage: ./csv-to-md.exe -inputFile=input.csv -outputToWindow -align=0 -autoCopy")
+		slog.Info(fmt.Sprintf("Example usage: %s", EXAMPLE_COMMAND))
 		flag.PrintDefaults()
 		return
 	}
