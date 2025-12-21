@@ -134,7 +134,7 @@ func convert(csvString string, cfg Config) (string, error) {
 		result += convertedLine
 
 		if idx == 0 {
-			separatorLine := constructSeparatorLine(colCount, maxLenOfCol)
+			separatorLine := constructSeparatorLine(colCount, maxLenOfCol, cfg)
 			result += separatorLine
 		}
 	}
@@ -143,13 +143,32 @@ func convert(csvString string, cfg Config) (string, error) {
 }
 
 // Construct a separator line between the header line and data lines
-func constructSeparatorLine(colsCount int, maxLens []int) string {
+func constructSeparatorLine(colsCount int, maxLens []int, cfg Config) string {
 	separatorLine := "| "
 	for i := range colsCount {
 		dashes := ""
 		// loop through max length of each column and add dashes
 		for range maxLens[i] {
 			dashes += "-"
+		}
+		switch cfg.Align {
+		case Left:
+			// replace the first dash with a colon. This makes the rendered table align text on the left hand side
+			dashes = strings.Replace(dashes, "-", ":", 1)
+		case Right:
+			// replace the last dash with a colon. This makes the rendered table align text on the right hand side
+			i := strings.LastIndex(dashes, "-")
+			excludingLast := dashes[:i] + strings.Replace(dashes[i:], "-", "", 1)
+			dashes = excludingLast + ":"
+		case Center:
+			// replace the first and last dashes with colons
+			// first
+			dashes = strings.Replace(dashes, "-", ":", 1)
+
+			// last
+			i := strings.LastIndex(dashes, "-")
+			excludingLast := dashes[:i] + strings.Replace(dashes[i:], "-", "", 1)
+			dashes = excludingLast + ":"
 		}
 		separatorLine += dashes + " | "
 	}
