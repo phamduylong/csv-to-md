@@ -15,6 +15,7 @@ This is a utility tool used to convert [Comma-separated values (CSV)](https://en
     - [Output To Window](#output-to-window)
     - [URL](#url)
     - [Verbose Logging](#verbose-logging)
+  - [Performance](#performance)
 
 ## Usage
 
@@ -135,4 +136,16 @@ Should detailed diagnostic messages be logged? By default, these messages are ke
 ```console
 ./csv-to-md.exe -verboseLogging
 ```
+
 </details>
+
+## Performance
+
+*I did not create a very proper setup to measure the performance. Ran it with my own PC so take it with a grain of salt. Data for these runs was generated from [Faker library](https://pkg.go.dev/github.com/jaswdr/faker), specifically their [person](https://pkg.go.dev/github.com/jaswdr/faker#Person) and [address](https://pkg.go.dev/github.com/jaswdr/faker#Address) types.*
+
+| Rows    | Columns | Average Execution Time (5 runs) |
+| ------- | ------- | ------------------------------- |
+| 1.000   | 10      | 29ms                            |
+| 10.000  | 10      | 2,1s                            |
+| 50.000  | 10      | 48,2s                           |
+| 100.000 | 10      | 3 minutes                       |
