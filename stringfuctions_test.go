@@ -57,3 +57,24 @@ func TestPadCenterOdd(t *testing.T) {
 
 	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
 }
+
+/* Conversion */
+func TestConvertGeneric(t *testing.T) {
+	testCSV := `First name,Last name,Email,Phone
+Jane,Smith,jane.smith@email.com,555-555-1212
+John,Doe,john.doe@email.com,555-555-3434
+Alice,Wonder,alice@wonderland.com,555-555-5656`
+
+	expected := `| First name | Last name |        Email         |    Phone     |
+| :--------: | :-------: | :------------------: | :----------: | 
+|    Jane    |   Smith   | jane.smith@email.com | 555-555-1212 |
+|    John    |    Doe    |  john.doe@email.com  | 555-555-3434 |
+|   Alice    |  Wonder   | alice@wonderland.com | 555-555-5656 |`
+
+	res, err := Convert(testCSV, createGenericConfig())
+
+	assert.Nil(t, err, "Convert should not return a non-nil error")
+
+	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
+
+}
