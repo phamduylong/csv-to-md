@@ -1,4 +1,4 @@
-module csv-to-md
+module github.com/phamduylong/csv-to-md
 
 go 1.25.5
 
