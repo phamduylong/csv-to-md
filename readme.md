@@ -23,19 +23,25 @@ An example command to run the tool can look like this:
 
 ```go
 import (
-  "github.com/phamduylong/csv-to-md"
   "fmt"
-  "errors"
+
+  csv2md "github.com/phamduylong/csv-to-md"
 )
 
 func convertMyCSV() (string, error) {
-  var cfg Config
+  var cfg csv2md.Config
   cfg.URL = "https://raw.githubusercontent.com/askmedia/datalogue/master/olympics/winter_olympics_medals.csv"
-  cfg.Align = Center
+  cfg.Align = csv2md.Center
   cfg.VerboseLogging = true
-  table, err := Convert(cfg)
-  
-  fmt.Println(table)
+
+  res, convertErr := csv2md.Convert(cfg)
+
+  if err != nil {
+    fmt.Println(err)
+    return "", convertErr
+  }
+
+  return res, nil
 }
 ```
 
