@@ -14,8 +14,9 @@ func Convert(cfg Config) (string, error) {
 	cfgErr := ValidateConfig(cfg)
 
 	if cfgErr != nil {
-		slog.Error(fmt.Sprintf("Configuration error: %s\n", cfgErr))
+		return "", fmt.Errorf("Configuration error: %s\n", cfgErr)
 	}
+
 	if cfg.VerboseLogging {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
@@ -23,7 +24,7 @@ func Convert(cfg Config) (string, error) {
 	csvString, readErr := getCSVStringFromSource(cfg)
 
 	if readErr != nil {
-		slog.Error(fmt.Sprintf("Error when reading CSV: %s\n", readErr))
+		return "", fmt.Errorf("Error when reading CSV: %s\n", readErr)
 	}
 
 	if csvString == "" {
@@ -35,7 +36,7 @@ func Convert(cfg Config) (string, error) {
 	records, err := csvReader.ReadAll()
 
 	if err != nil {
-		slog.Error(fmt.Sprintf("Failed to parse CSV. Error: %s", err))
+		return "", fmt.Errorf("Failed to parse CSV. Error: %s", err)
 	}
 
 	colCount := csvReader.FieldsPerRecord
