@@ -17,18 +17,18 @@ This is a utility tool used to convert [Comma-separated values (CSV)](https://en
 
 ## Usage
 
-The easiest and recommended way to use this tool is through the command line. Download the [.exe executable file](https://github.com/phamduylong/csv-to-md/releases) and run the tool from a terminal of your choice.
-
-An example command to run the tool can look like this:
+An example conversion can look like this:
 
 ```go
+package main
+
 import (
   "fmt"
 
   csv2md "github.com/phamduylong/csv-to-md"
 )
 
-func convertMyCSV() (string, error) {
+func main() {
   var cfg csv2md.Config
   cfg.URL = "https://raw.githubusercontent.com/askmedia/datalogue/master/olympics/winter_olympics_medals.csv"
   cfg.Align = csv2md.Center
@@ -36,12 +36,11 @@ func convertMyCSV() (string, error) {
 
   res, convertErr := csv2md.Convert(cfg)
 
-  if err != nil {
-    fmt.Println(err)
-    return "", convertErr
+  if convertErr != nil {
+    fmt.Println(convertErr)
   }
 
-  return res, nil
+  fmt.Println(res)
 }
 ```
 
