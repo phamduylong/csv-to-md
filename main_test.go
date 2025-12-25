@@ -52,7 +52,11 @@ func TestPadCenterOdd(t *testing.T) {
 /* Conversion */
 func TestConvertGeneric(t *testing.T) {
 	cfg := createGenericConfig()
-	cfg.InputFilePath = "testdata/convertgeneric.csv"
+
+	csv := `First name,Last name,Email,Phone
+Jane,Smith,jane.smith@email.com,555-555-1212
+John,Doe,john.doe@email.com,555-555-3434
+Alice,Wonder,alice@wonderland.com,555-555-5656`
 
 	expected := `| First name | Last name |        Email         |    Phone     |
 | :--------: | :-------: | :------------------: | :----------: |
@@ -60,7 +64,7 @@ func TestConvertGeneric(t *testing.T) {
 |    John    |    Doe    |  john.doe@email.com  | 555-555-3434 |
 |   Alice    |  Wonder   | alice@wonderland.com | 555-555-5656 |`
 
-	res, err := Convert(cfg)
+	res, err := Convert(csv, cfg)
 
 	assert.Nil(t, err, "Convert should not return a non-nil error")
 
