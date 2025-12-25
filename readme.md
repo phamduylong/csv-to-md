@@ -1,6 +1,6 @@
 # CSV To Markdown Table Converter
 
-This is a utility tool used to convert [Comma-separated values (CSV)](https://en.wikipedia.org/wiki/Comma-separated_values) files to a [Markdown table](https://www.markdownguide.org/extended-syntax/#tables). The tool was written with [Go](https://go.dev/), a programming language known for being fantastic with string processing, great performance and a collection of other great features.
+This is a utility tool used to convert [Comma-separated values (CSV)](https://en.wikipedia.org/wiki/Comma-separated_values) files to a [Markdown table](https://www.markdownguide.org/extended-syntax/#tables).
 
 ## Table Of Contents
 
@@ -8,11 +8,6 @@ This is a utility tool used to convert [Comma-separated values (CSV)](https://en
   - [Table Of Contents](#table-of-contents)
   - [Usage](#usage)
   - [Configuration Options](#configuration-options)
-    - [Align](#align)
-    - [Delimiter](#delimiter)
-    - [Input File](#input-file)
-    - [URL](#url)
-    - [Verbose Logging](#verbose-logging)
   - [Performance](#performance)
 
 ## Usage
@@ -30,7 +25,6 @@ import (
 
 func main() {
   var cfg csv2md.Config
-  cfg.URL = "https://raw.githubusercontent.com/askmedia/datalogue/master/olympics/winter_olympics_medals.csv"
   cfg.Align = csv2md.Center
   cfg.VerboseLogging = true
 
@@ -48,39 +42,17 @@ func main() {
 
 The program offers a range of different configuration options to customize the tool to best fit your use case.
 
-### Align
-
-<sub>*(Optional)*</sub>
-
-This option decides should text be aligned in the table. Available choices:
-- 0 - Center (default)
-- 1 - Left
-- 2 - Right
-
-
-### Delimiter
-
-<sub>*(Optional)*</sub>
-
-Set the delimiter character for the CSV parser. If not given, the comma `,` character will be used. This can come in handy when your CSV file use different delimiters than the popular comma.
-
-### Input File
-
-The path to the input CSV file to be converted. This can be either [absolute or relative path](https://en.wikipedia.org/wiki/Path_(computing)#).
-
-**NOTE**: This should be used mutual exclusively with [URL](#url) (meaning only one of them should be used at a time)
-
-### URL
-
-The URL from which the CSV data can be fetched from. For this to work, the HTTPS response sent by the server must set the [Media Type](https://en.wikipedia.org/wiki/Media_type#Common_examples) to `text/csv; charset=utf-8` and the [return status code](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#Standard_codes) must be in range of [success (200-299)](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#2xx_success) or [redirection (300-399)](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#3xx_redirection). Last but not least, the [response body](https://en.wikipedia.org/wiki/HTTP#Body) should contain only the CSV data and nothing else.
-
-**NOTE**: This should be used mutual exclusively with [Input File](#input-file) (meaning only one of them should be used at a time).
-
-### Verbose Logging
-
-<sub>*(Optional)*</sub>
-
-Should detailed diagnostic messages be logged? By default, these messages are kept out of the process to avoid polluting the program output and prevent unnecessary information from confusing users. It could be helpful to track down the problem when the program execution went wrong.
+| Option                           | Type            | What does it do? |
+|----------------------------------|-----------------|------------------|
+| Align                            | Align           | Align the text on the rendered table. Visual feedback on the markdown syntax is also provided. |
+| CSVReaderConfig                  | CSVReaderConfig | Config options to be passed into CSV reader object. See type Reader in the encoding/csv module. |
+| CSVReaderConfig.Comma            | Rune            | Set the delimiter of the CSV reader |
+| CSVReaderConfig.Comment          | Rune            | Set the comment character for the CSV reader. |
+| CSVReaderConfig.FieldsPerRecord  | int             | Set the amount of fields per CSV row. |
+| CSVReaderConfig.LazyQuotes       | bool            | Set whether lazy quotes are allowed. If lazy quotes are allowed, a quote may appear in an unquoted field and a non-doubled quote may appear in a quoted field. |
+| CSVReaderConfig.TrimLeadingSpace | bool            | Set whether leading space before the fields' values should be ignored. |
+| CSVReaderConfig.ReuseRecord      | bool            | Set whether calls to Read may return a slice sharing the backing array of the previous call's returned slice for performance. By default, each call to Read returns newly allocated memory owned by the caller. |
+| VerboseLogging                   | bool            | Log detailed diagnostic messages when running the program. |
 
 ## Performance
 
