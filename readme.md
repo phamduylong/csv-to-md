@@ -2,6 +2,8 @@
 
 This is a utility tool used to convert [Comma-separated values (CSV)](https://en.wikipedia.org/wiki/Comma-separated_values) files to a [Markdown table](https://www.markdownguide.org/extended-syntax/#tables).
 
+Test it out in the [Go playground](https://go.dev/play/p/p42h8-jG5dQ).
+
 ## Table Of Contents
 
 - [CSV To Markdown Table Converter](#csv-to-markdown-table-converter)
@@ -25,17 +27,42 @@ import (
 
 func main() {
   var cfg csv2md.Config
-  cfg.Align = csv2md.Center
+  cfg.Align = csv2md.Left
   cfg.VerboseLogging = true
+  
+  csv := `Index,Customer Id,First Name,Last Name,Company,City,Country,Phone
+1,DD37Cf93aecA6Dc,Sheryl,Baxter,Rasmussen Group,East Leonard,Chile,229.077.5154
+2,1Ef7b82A4CAAD10,Preston,Lozano,Vega-Gentry,East Jimmychester,Djibouti,5153435776
+3,6F94879bDAfE5a6,Roy,Berry,Murillo-Perry,Isabelborough,Antigua and Barbuda,+1-539-402-0259
+4,5Cef8BFA16c5e3c,Linda,Olsen,"Dominguez, Mcmillan and Donovan",Bensonview,Dominican Republic,001-808-617-6467x12895
+5,053d585Ab6b3159,Joanna,Bender,"Martin, Lang and Andrade",West Priscilla,Slovakia (Slovak Republic),001-234-203-0635x76146`
 
-  res, convertErr := csv2md.Convert(cfg)
+  res, convertErr := csv2md.Convert(csv, cfg)
 
   if convertErr != nil {
     fmt.Println(convertErr)
   }
 
-  fmt.Println(res)
+  fmt.Printf("Converted table:\n\n%s\n", res)
 }
+```
+
+Output would look like this:
+
+```console
+2009/11/10 23:00:00 DEBUG Validating config 🤔
+2009/11/10 23:00:00 DEBUG Config is valid ✅
+Converted table:
+
+| Index | Customer Id     | First Name | Last Name | Company                         | City              | Country                    | Phone                  |
+| :---- | :-------------- | :--------- | :-------- | :------------------------------ | :---------------- | :------------------------- | :--------------------- |
+| 1     | DD37Cf93aecA6Dc | Sheryl     | Baxter    | Rasmussen Group                 | East Leonard      | Chile                      | 229.077.5154           |
+| 2     | 1Ef7b82A4CAAD10 | Preston    | Lozano    | Vega-Gentry                     | East Jimmychester | Djibouti                   | 5153435776             |
+| 3     | 6F94879bDAfE5a6 | Roy        | Berry     | Murillo-Perry                   | Isabelborough     | Antigua and Barbuda        | +1-539-402-0259        |
+| 4     | 5Cef8BFA16c5e3c | Linda      | Olsen     | Dominguez, Mcmillan and Donovan | Bensonview        | Dominican Republic         | 001-808-617-6467x12895 |
+| 5     | 053d585Ab6b3159 | Joanna     | Bender    | Martin, Lang and Andrade        | West Priscilla    | Slovakia (Slovak Republic) | 001-234-203-0635x76146 |
+
+Program exited.
 ```
 
 ## Configuration Options
@@ -45,8 +72,8 @@ The program offers a range of different configuration options to customize the t
 | Option                           | Type            | What does it do? |
 |----------------------------------|-----------------|------------------|
 | Align                            | Align           | Align the text on the rendered table. Visual feedback on the markdown syntax is also provided. |
-| CSVReaderConfig                  | CSVReaderConfig | Config options to be passed into CSV reader object. See type Reader in the encoding/csv module. |
-| CSVReaderConfig.Comma            | Rune            | Set the delimiter of the CSV reader |
+| CSVReaderConfig                  | CSVReaderConfig | Config options to be passed into CSV reader object. See [type Reader in the encoding/csv module](https://pkg.go.dev/encoding/csv#Reader). |
+| CSVReaderConfig.Comma            | Rune            | Set the delimiter of the CSV reader. |
 | CSVReaderConfig.Comment          | Rune            | Set the comment character for the CSV reader. |
 | CSVReaderConfig.FieldsPerRecord  | int             | Set the amount of fields per CSV row. |
 | CSVReaderConfig.LazyQuotes       | bool            | Set whether lazy quotes are allowed. If lazy quotes are allowed, a quote may appear in an unquoted field and a non-doubled quote may appear in a quoted field. |
@@ -60,7 +87,7 @@ The program offers a range of different configuration options to customize the t
 
 | Rows    | Columns | Average Execution Time (5 runs) |
 | ------- | ------- | ------------------------------- |
-| 1.000   | 10      | 29ms                            |
-| 10.000  | 10      | 2,1s                            |
-| 50.000  | 10      | 48,2s                           |
-| 100.000 | 10      | 3 minutes                       |
+| 100     | 12      | 1,8ms                           |
+| 1.000   | 12      | 37ms                            |
+| 10.000  | 12      | 2,4s                            |
+| 100.000 | 12      | 249s                            |
