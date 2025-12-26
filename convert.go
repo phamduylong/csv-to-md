@@ -36,6 +36,10 @@ func Convert(csv string, cfg Config) (string, error) {
 	colCount := csvReader.FieldsPerRecord
 	result := ""
 
+	if cfg.Caption != "" {
+		result += fmt.Sprintf("<!-- %s -->\n", cfg.Caption)
+	}
+
 	// max length of each column so we can beautify the table
 	maxLenOfCol := getMaxColumnLengths(records)
 
@@ -59,7 +63,7 @@ func Convert(csv string, cfg Config) (string, error) {
 
 		// after first line, we shall get a separator line
 		if idx == 0 {
-			separatorLine := constructSeparatorLine(colCount, maxLenOfCol, cfg.Align)
+			separatorLine := constructSeparatorLine(colCount, maxLenOfCol, cfg)
 			result += separatorLine
 		}
 	}
@@ -69,15 +73,22 @@ func Convert(csv string, cfg Config) (string, error) {
 
 // Construct data line
 func constructDataLine(colVals []string, cfg Config, maxLenOfCol []int, currRowIdx int) (string, error) {
+	if cfg.Compact {
+		return constructCompactDataLine(colVals)
+	} else {
+		return constructBeautifulDataLine(colVals, cfg.Align, maxLenOfCol, currRowIdx)
+	}
+}
 
-	convertedLine := ""
+// Construct a well-formatted data line
+func constructBeautifulDataLine(colVals []string, align Align, maxLenOfCol []int, currRowIdx int) (string, error) {
+	convertedLine := "| "
 
 	for i := range len(colVals) {
 		paddedString := ""
 		var err error = nil
 
-		// this is basically visual feedback for users, doesn't affect how the table is rendered.
-		switch cfg.Align {
+		switch align {
 		case Left:
 			paddedString, err = padEnd(colVals[i], maxLenOfCol[i], ' ')
 		case Right:
@@ -85,22 +96,43 @@ func constructDataLine(colVals []string, cfg Config, maxLenOfCol []int, currRowI
 		case Center:
 			paddedString, err = padCenter(colVals[i], maxLenOfCol[i], ' ')
 		}
+		
 
 		if err != nil {
 			return "", errors.New("something happened when padding value " + colVals[i] + " row: " + fmt.Sprint(currRowIdx) +
 				" col: " + fmt.Sprint(i) + ". Error message: " + err.Error())
 		}
-		convertedLine += "| " + paddedString + " "
-	}
 
-	// add final column closer and new line
-	convertedLine += "|"
+		convertedLine += paddedString + " | "
+		
+	}
+	
+	convertedLine += "\n"
+
+	return convertedLine, nil
+}
+
+// Construct a compact data line
+func constructCompactDataLine(colVals []string) (string, error) {
+	convertedLine := "|"
+	for i := range len(colVals) {
+		convertedLine += colVals[i] + "|"
+	}
 
 	return convertedLine, nil
 }
 
 // Construct a separator line between the header line and data lines
-func constructSeparatorLine(colsCount int, maxLens []int, align Align) string {
+func constructSeparatorLine(colsCount int, maxLens []int, cfg Config) string {
+	if cfg.Compact {
+		return constructCompactSeparatorLine(colsCount, cfg.Align)
+	} else {
+		return constructBeautifulSeparatorLine(colsCount, maxLens, cfg.Align)
+	}
+}
+
+// Construct a well-formatted separator line
+func constructBeautifulSeparatorLine(colsCount int, maxLens []int, align Align) string {
 	separatorLine := "| "
 	for i := range colsCount {
 		dashes := ""
@@ -128,6 +160,27 @@ func constructSeparatorLine(colsCount int, maxLens []int, align Align) string {
 			dashes = excludingLast + ":"
 		}
 		separatorLine += dashes + " | "
+	}
+
+	// trim any potential leading/following whitespaces and add new line character
+	separatorLine = strings.TrimSpace(separatorLine)
+	separatorLine += "\n"
+
+	return separatorLine
+}
+
+// Construct a compact separator line
+func constructCompactSeparatorLine(colCount int, align Align) string {
+	separatorLine := "|"
+	for range colCount {
+		switch align {
+		case Left:
+			separatorLine += ":-|"
+		case Right:
+			separatorLine += "-:|"
+		case Center:
+			separatorLine += ":-:|"
+		}
 	}
 
 	// trim any potential leading/following whitespaces and add new line character
