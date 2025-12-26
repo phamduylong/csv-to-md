@@ -16,7 +16,7 @@ func createCSVReader(cfg Config, csvString string) *csv.Reader {
 		r.Comment = cfg.CSVReaderConfig.Comment
 	}
 
-	if r.FieldsPerRecord > 0 {
+	if cfg.CSVReaderConfig.FieldsPerRecord > 0 {
 		r.FieldsPerRecord = cfg.CSVReaderConfig.FieldsPerRecord
 	}
 
