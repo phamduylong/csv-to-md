@@ -50,13 +50,31 @@ func TestPadCenterOdd(t *testing.T) {
 }
 
 /* Conversion */
-func TestConvertGeneric(t *testing.T) {
-	cfg := createGenericConfig()
-
-	csv := `First name,Last name,Email,Phone
+const csvString = `First name,Last name,Email,Phone
 Jane,Smith,jane.smith@email.com,555-555-1212
 John,Doe,john.doe@email.com,555-555-3434
 Alice,Wonder,alice@wonderland.com,555-555-5656`
+
+const csvStringWithSemiColon = `First name;Last name;Email;Phone
+Jane;Smith;jane.smith@email.com;555-555-1212
+John;Doe;john.doe@email.com;555-555-3434
+Alice;Wonder;alice@wonderland.com;555-555-5656`
+
+const csvStringWithCommentLines = `First name,Last name,Email,Phone
+Jane,Smith,jane.smith@email.com,555-555-1212
+- this is a commented line    Jane,Smith,jane.smith@email.com,555-555-1212
+John,Doe,john.doe@email.com,555-555-3434
+- this is a commented line John,Doe,john.doe@email.com,555-555-3434
+Alice,Wonder,alice@wonderland.com,555-555-5656
+- this is a commented line  Alice,Wonder,alice@wonderland.com,555-555-5656`
+
+const csvStringWithWhiteSpaces = `First name,   Last name,  Email,Phone
+   Jane,   Smith,jane.smith@email.com,555-555-1212
+John,Doe,  john.doe@email.com,555-555-3434
+Alice,Wonder,    alice@wonderland.com,    555-555-5656`
+
+func TestConvertGeneric(t *testing.T) {
+	cfg := createGenericConfig()
 
 	expected := `| First name | Last name |        Email         |    Phone     |
 | :--------: | :-------: | :------------------: | :----------: |
@@ -64,12 +82,127 @@ Alice,Wonder,alice@wonderland.com,555-555-5656`
 |    John    |    Doe    |  john.doe@email.com  | 555-555-3434 |
 |   Alice    |  Wonder   | alice@wonderland.com | 555-555-5656 |`
 
-	res, err := Convert(csv, cfg)
+	res, err := Convert(csvString, cfg)
 
 	assert.Nil(t, err, "Convert should not return a non-nil error")
 
 	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
 
+}
+
+func TestLeftAlign(t *testing.T) {
+	cfg := createGenericConfig()
+	cfg.Align = Left
+
+	expected := `| First name | Last name | Email                | Phone        |
+| :--------- | :-------- | :------------------- | :----------- |
+| Jane       | Smith     | jane.smith@email.com | 555-555-1212 |
+| John       | Doe       | john.doe@email.com   | 555-555-3434 |
+| Alice      | Wonder    | alice@wonderland.com | 555-555-5656 |`
+
+	res, err := Convert(csvString, cfg)
+
+	assert.Nil(t, err, "Convert with left align should not return a non-nil error")
+
+	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
+}
+
+func TestRightAlign(t *testing.T) {
+	cfg := createGenericConfig()
+	cfg.Align = Right
+
+	expected := `| First name | Last name |                Email |        Phone |
+| ---------: | --------: | -------------------: | -----------: |
+|       Jane |     Smith | jane.smith@email.com | 555-555-1212 |
+|       John |       Doe |   john.doe@email.com | 555-555-3434 |
+|      Alice |    Wonder | alice@wonderland.com | 555-555-5656 |`
+
+	res, err := Convert(csvString, cfg)
+
+	assert.Nil(t, err, "Convert with right align should not return a non-nil error")
+
+	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
+}
+
+func TestWithCustomDelimiter(t *testing.T) {
+	cfg := createGenericConfig()
+	cfg.CSVReaderConfig.Comma = ';'
+	expected := `| First name | Last name |        Email         |    Phone     |
+| :--------: | :-------: | :------------------: | :----------: |
+|    Jane    |   Smith   | jane.smith@email.com | 555-555-1212 |
+|    John    |    Doe    |  john.doe@email.com  | 555-555-3434 |
+|   Alice    |  Wonder   | alice@wonderland.com | 555-555-5656 |`
+
+	res, err := Convert(csvStringWithSemiColon, cfg)
+
+	assert.Nil(t, err, "Convert with custom delimiter should not return a non-nil error")
+
+	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
+
+}
+
+func TestWithCustomComment(t *testing.T) {
+	cfg := createGenericConfig()
+	cfg.CSVReaderConfig.Comment = '-'
+	expected := `| First name | Last name |        Email         |    Phone     |
+| :--------: | :-------: | :------------------: | :----------: |
+|    Jane    |   Smith   | jane.smith@email.com | 555-555-1212 |
+|    John    |    Doe    |  john.doe@email.com  | 555-555-3434 |
+|   Alice    |  Wonder   | alice@wonderland.com | 555-555-5656 |`
+
+	res, err := Convert(csvStringWithCommentLines, cfg)
+
+	assert.Nil(t, err, "Convert with comment lines should not return a non-nil error")
+
+	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
+}
+
+func TestWithCorrectCustomFieldsPerRecord(t *testing.T) {
+	cfg := createGenericConfig()
+	cfg.CSVReaderConfig.FieldsPerRecord = 4
+	expected := `| First name | Last name |        Email         |    Phone     |
+| :--------: | :-------: | :------------------: | :----------: |
+|    Jane    |   Smith   | jane.smith@email.com | 555-555-1212 |
+|    John    |    Doe    |  john.doe@email.com  | 555-555-3434 |
+|   Alice    |  Wonder   | alice@wonderland.com | 555-555-5656 |`
+
+	res, err := Convert(csvString, cfg)
+
+	assert.Nil(t, err, "Convert with correct fields per record setting should not return a non-nil error")
+
+	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
+}
+
+func TestWithMismatchCustomFieldsPerRecord(t *testing.T) {
+	cfg := createGenericConfig()
+	cfg.CSVReaderConfig.FieldsPerRecord = 17
+	expected := `| First name | Last name |        Email         |    Phone     |
+| :--------: | :-------: | :------------------: | :----------: |
+|    Jane    |   Smith   | jane.smith@email.com | 555-555-1212 |
+|    John    |    Doe    |  john.doe@email.com  | 555-555-3434 |
+|   Alice    |  Wonder   | alice@wonderland.com | 555-555-5656 |`
+
+	res, err := Convert(csvString, cfg)
+
+	assert.NotNil(t, err, "Convert with mismatch fields per record setting should return an error")
+
+	assert.NotEqual(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
+}
+
+func TestWithTrimLeadingWhiteSpace(t *testing.T) {
+	cfg := createGenericConfig()
+	cfg.CSVReaderConfig.TrimLeadingSpace = true
+	expected := `| First name | Last name |        Email         |    Phone     |
+| :--------: | :-------: | :------------------: | :----------: |
+|    Jane    |   Smith   | jane.smith@email.com | 555-555-1212 |
+|    John    |    Doe    |  john.doe@email.com  | 555-555-3434 |
+|   Alice    |  Wonder   | alice@wonderland.com | 555-555-5656 |`
+
+	res, err := Convert(csvStringWithWhiteSpaces, cfg)
+
+	assert.Nil(t, err, "Convert with trim leading whitespace setting should not return an error")
+
+	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
 }
 
 func createGenericConfig() Config {
