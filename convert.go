@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"unicode/utf8"
 )
@@ -25,15 +26,22 @@ func Convert(csv string, cfg Config) (string, error) {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
-	// escape pipe characters 
+	// escape pipe characters
 	csv = strings.ReplaceAll(csv, "|", `\|`)
 
 	csvReader := createCSVReader(cfg, csv)
 
-	records, err := csvReader.ReadAll()
+	records, readErr := csvReader.ReadAll()
 
-	if err != nil {
-		return "", fmt.Errorf("Failed to parse CSV. Error: %s", err)
+	if readErr != nil {
+		return "", fmt.Errorf("Failed to parse CSV. Error: %s", readErr)
+	}
+
+	excludedColumnsIndices := getIndicesOfExcludedColumns(cfg.ExcludedColumns, records[0])
+
+	if len(excludedColumnsIndices) > 0 && len(excludedColumnsIndices) == len(records) {
+		slog.Warn("All columns were excluded from conversion. Returning an empty string")
+		return "", nil
 	}
 
 	colCount := csvReader.FieldsPerRecord
@@ -48,7 +56,7 @@ func Convert(csv string, cfg Config) (string, error) {
 
 	// constructing each data line
 	for idx := range len(records) {
-		convertedLine, err := constructDataLine(records[idx], cfg, maxLenOfCol, idx)
+		convertedLine, err := constructDataLine(records[idx], cfg, excludedColumnsIndices, maxLenOfCol, idx)
 
 		if err != nil {
 			return "", err
@@ -66,7 +74,7 @@ func Convert(csv string, cfg Config) (string, error) {
 
 		// after first line, we shall get a separator line
 		if idx == 0 {
-			separatorLine := constructSeparatorLine(colCount, maxLenOfCol, cfg)
+			separatorLine := constructSeparatorLine(colCount, excludedColumnsIndices, maxLenOfCol, cfg)
 			result += separatorLine
 		}
 	}
@@ -75,19 +83,24 @@ func Convert(csv string, cfg Config) (string, error) {
 }
 
 // Construct data line
-func constructDataLine(colVals []string, cfg Config, maxLenOfCol []int, currRowIdx int) (string, error) {
+func constructDataLine(colVals []string, cfg Config, excludedColumnsIndices []int, maxLenOfCol []int, currRowIdx int) (string, error) {
 	if cfg.Compact {
-		return constructCompactDataLine(colVals)
+		return constructCompactDataLine(colVals, excludedColumnsIndices)
 	} else {
-		return constructBeautifulDataLine(colVals, cfg.Align, maxLenOfCol, currRowIdx)
+		return constructBeautifulDataLine(colVals, cfg.Align, excludedColumnsIndices, maxLenOfCol, currRowIdx)
 	}
 }
 
 // Construct a well-formatted data line
-func constructBeautifulDataLine(colVals []string, align Align, maxLenOfCol []int, currRowIdx int) (string, error) {
+func constructBeautifulDataLine(colVals []string, align Align, excludedColumnsIndices []int, maxLenOfCol []int, currRowIdx int) (string, error) {
 	convertedLine := "| "
 
 	for i := range len(colVals) {
+		// If current column is excluded, ignore it
+		if slices.Contains(excludedColumnsIndices, i) {
+			continue
+		}
+
 		paddedString := ""
 		var err error = nil
 
@@ -115,9 +128,13 @@ func constructBeautifulDataLine(colVals []string, align Align, maxLenOfCol []int
 }
 
 // Construct a compact data line
-func constructCompactDataLine(colVals []string) (string, error) {
+func constructCompactDataLine(colVals []string, excludedColumnsIndices []int) (string, error) {
 	convertedLine := "|"
 	for i := range len(colVals) {
+		// If current column is excluded, ignore it
+		if slices.Contains(excludedColumnsIndices, i) {
+			continue
+		}
 		convertedLine += colVals[i] + "|"
 	}
 
@@ -125,18 +142,24 @@ func constructCompactDataLine(colVals []string) (string, error) {
 }
 
 // Construct a separator line between the header line and data lines
-func constructSeparatorLine(colsCount int, maxLens []int, cfg Config) string {
+func constructSeparatorLine(colsCount int, excludedColumnsIndices []int, maxLens []int, cfg Config) string {
 	if cfg.Compact {
-		return constructCompactSeparatorLine(colsCount, cfg.Align)
+		// since we're in compact mode, all columns separator will look alike. We just care about the number of columns included
+		return constructCompactSeparatorLine(colsCount-len(excludedColumnsIndices), cfg.Align)
 	} else {
-		return constructBeautifulSeparatorLine(colsCount, maxLens, cfg.Align)
+		return constructBeautifulSeparatorLine(colsCount, excludedColumnsIndices, maxLens, cfg.Align)
 	}
 }
 
 // Construct a well-formatted separator line
-func constructBeautifulSeparatorLine(colsCount int, maxLens []int, align Align) string {
+func constructBeautifulSeparatorLine(colsCount int, excludedColumnsIndices []int, maxLens []int, align Align) string {
 	separatorLine := "| "
 	for i := range colsCount {
+		// If current column is excluded, ignore it
+		if slices.Contains(excludedColumnsIndices, i) {
+			continue
+		}
+
 		dashes := ""
 		// loop through max length of each column and add dashes
 		for range maxLens[i] {
@@ -204,4 +227,17 @@ func getMaxColumnLengths(lines [][]string) []int {
 	}
 
 	return maxLens
+}
+
+func getIndicesOfExcludedColumns(excludedColumns []string, headerLine []string) []int {
+	var excludedColumnsIndices []int
+	if len(excludedColumns) > 0 {
+		for colIdx := range len(headerLine) {
+			// if column is found in the csv and not duplicated
+			if slices.Contains(excludedColumns, headerLine[colIdx]) {
+				excludedColumnsIndices = append(excludedColumnsIndices, colIdx)
+			}
+		}
+	}
+	return excludedColumnsIndices
 }
