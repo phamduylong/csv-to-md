@@ -372,7 +372,6 @@ func TestConvertExcludeColumns(t *testing.T) {
 	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
 }
 
-
 func TestConvertExcludeAllColumns(t *testing.T) {
 	cfg := createGenericConfig()
 	cfg.ExcludedColumns = []string{"Email", "Last name", "First name", "Phone"}
