@@ -101,6 +101,7 @@ func TestConvertGeneric(t *testing.T) {
 
 }
 
+/* ALIGN */
 func TestConvertWithNarrowColumnCenterAlign(t *testing.T) {
 	cfg := createGenericConfig()
 	cfg.Align = Center
@@ -186,6 +187,7 @@ func TestRightAlign(t *testing.T) {
 	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
 }
 
+/* CSV READER CONFIG OPTIONS */
 func TestWithCustomDelimiter(t *testing.T) {
 	cfg := createGenericConfig()
 	cfg.CSVReaderConfig.Comma = ';'
@@ -267,6 +269,7 @@ func TestWithTrimLeadingWhiteSpace(t *testing.T) {
 	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
 }
 
+/* CAPTION */
 func TestWithCaption(t *testing.T) {
 	cfg := createGenericConfig()
 	cfg.Caption = "Table 2: Customers who are United fans"
@@ -284,6 +287,7 @@ func TestWithCaption(t *testing.T) {
 	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
 }
 
+/* COMPACT */
 func TestCompactConvertGeneric(t *testing.T) {
 	cfg := createGenericConfig()
 	cfg.Compact = true
@@ -337,24 +341,7 @@ func TestCompactConvertGenericRightAlign(t *testing.T) {
 	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
 }
 
-func TestEscapePipeCharacter(t *testing.T) {
-	cfg := createGenericConfig()
-	cfg.Align = Left
-
-	expected := `| ID | Expression        | Description                          |
-| :- | :---------------- | :----------------------------------- |
-| 1  | A \|\| B          | Logical OR using pipe                |
-| 2  | foo \| bar \| baz | Chained pipe values                  |
-| 3  | cmd1 \| cmd2      | Unix-style pipe between commands     |
-| 4  | x \| y == z       | Comparison involving a pipe operator |`
-
-	res, err := Convert(csvStringWithPipeCharacters, cfg)
-
-	assert.Nil(t, err, "Convert with pipe characters should not return a non-nil error")
-
-	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
-}
-
+/* COLUMNS EXCLUSION AND SORTING */
 func TestConvertExcludeAllColumnsButOne(t *testing.T) {
 	cfg := createGenericConfig()
 	cfg.ExcludedColumns = []string{"Email", "First name", "Phone"}
@@ -417,6 +404,60 @@ func TestConvertExcludeNoColumn(t *testing.T) {
 	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
 }
 
+func TestConvertSortColumnsAscending(t *testing.T) {
+	cfg := createGenericConfig()
+	cfg.SortColumns = Ascending
+
+	expected := `|        Email         | First name | Last name |    Phone     |
+| :------------------: | :--------: | :-------: | :----------: |
+| jane.smith@email.com |    Jane    |   Smith   | 555-555-1212 |
+|  john.doe@email.com  |    John    |    Doe    | 555-555-3434 |
+| alice@wonderland.com |   Alice    |  Wonder   | 555-555-5656 |`
+
+	res, err := Convert(csvString, cfg)
+
+	assert.Nil(t, err, "Convert with sorted columns ascending should not return a non-nil error")
+
+	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
+}
+
+func TestConvertSortColumnsDescending(t *testing.T) {
+	cfg := createGenericConfig()
+	cfg.SortColumns = Descending
+
+	expected := `|    Phone     | Last name | First name |        Email         |
+| :----------: | :-------: | :--------: | :------------------: |
+| 555-555-1212 |   Smith   |    Jane    | jane.smith@email.com |
+| 555-555-3434 |    Doe    |    John    |  john.doe@email.com  |
+| 555-555-5656 |  Wonder   |   Alice    | alice@wonderland.com |`
+
+	res, err := Convert(csvString, cfg)
+
+	assert.Nil(t, err, "Convert with sorted columns descending should not return a non-nil error")
+
+	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
+}
+
+/* EDGE CASES */
+func TestEscapePipeCharacter(t *testing.T) {
+	cfg := createGenericConfig()
+	cfg.Align = Left
+
+	expected := `| ID | Expression        | Description                          |
+| :- | :---------------- | :----------------------------------- |
+| 1  | A \|\| B          | Logical OR using pipe                |
+| 2  | foo \| bar \| baz | Chained pipe values                  |
+| 3  | cmd1 \| cmd2      | Unix-style pipe between commands     |
+| 4  | x \| y == z       | Comparison involving a pipe operator |`
+
+	res, err := Convert(csvStringWithPipeCharacters, cfg)
+
+	assert.Nil(t, err, "Convert with pipe characters should not return a non-nil error")
+
+	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
+}
+
+/* HELPER */
 func createGenericConfig() Config {
 	var cfg Config
 	return cfg
