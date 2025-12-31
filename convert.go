@@ -90,26 +90,37 @@ func Convert(csv string, cfg Config) (string, error) {
 // Construct data line
 func constructDataLine(colVals []string, cfg Config, maxLenOfCol []int, currRowIdx int) (string, error) {
 	if cfg.Compact {
-		return constructCompactDataLine(colVals, cfg.excludedColumnsIndices)
+		return constructCompactDataLine(colVals, cfg)
 	} else {
-		return constructBeautifulDataLine(colVals, cfg.Align, cfg.excludedColumnsIndices, maxLenOfCol, currRowIdx)
+		return constructBeautifulDataLine(colVals, cfg, maxLenOfCol, currRowIdx)
 	}
 }
 
 // Construct a well-formatted data line
-func constructBeautifulDataLine(colVals []string, align Align, excludedColumnsIndices []int, maxLenOfCol []int, currRowIdx int) (string, error) {
+func constructBeautifulDataLine(colVals []string, cfg Config, maxLenOfCol []int, currRowIdx int) (string, error) {
+
+	colsCount := len(colVals)
+	indicesToIterate := make([]int, colsCount)
+	if cfg.SortColumns == None {
+		for i := range colsCount {
+			indicesToIterate[i] = i
+		}
+	} else {
+		copy(indicesToIterate, cfg.columnsIndicesAfterSorting)
+	}
+
 	convertedLine := "| "
 
-	for i := range len(colVals) {
+	for _, i := range indicesToIterate {
 		// If current column is excluded, ignore it
-		if slices.Contains(excludedColumnsIndices, i) {
+		if slices.Contains(cfg.excludedColumnsIndices, i) {
 			continue
 		}
 
 		paddedString := ""
 		var err error = nil
 
-		switch align {
+		switch cfg.Align {
 		case Left:
 			paddedString, err = padEnd(colVals[i], maxLenOfCol[i], ' ')
 		case Right:
@@ -124,20 +135,27 @@ func constructBeautifulDataLine(colVals []string, align Align, excludedColumnsIn
 		}
 
 		convertedLine += paddedString + " | "
-
 	}
-
-	convertedLine += "\n"
 
 	return convertedLine, nil
 }
 
 // Construct a compact data line
-func constructCompactDataLine(colVals []string, excludedColumnsIndices []int) (string, error) {
+func constructCompactDataLine(colVals []string, cfg Config) (string, error) {
+	colsCount := len(colVals)
+	indicesToIterate := make([]int, colsCount)
+	if cfg.SortColumns == None {
+		for i := range colsCount {
+			indicesToIterate[i] = i
+		}
+	} else {
+		copy(indicesToIterate, cfg.columnsIndicesAfterSorting)
+	}
 	convertedLine := "|"
-	for i := range len(colVals) {
+
+	for _, i := range indicesToIterate {
 		// If current column is excluded, ignore it
-		if slices.Contains(excludedColumnsIndices, i) {
+		if slices.Contains(cfg.excludedColumnsIndices, i) {
 			continue
 		}
 		convertedLine += colVals[i] + "|"
@@ -147,30 +165,40 @@ func constructCompactDataLine(colVals []string, excludedColumnsIndices []int) (s
 }
 
 // Construct a separator line between the header line and data lines
-func constructSeparatorLine(colsCount int, maxLens []int, cfg Config) string {
+func constructSeparatorLine(colsCount int, maxLenOfCol []int, cfg Config) string {
 	if cfg.Compact {
 		// since we're in compact mode, all columns separator will look alike. We just care about the number of columns included
 		return constructCompactSeparatorLine(colsCount-len(cfg.excludedColumnsIndices), cfg.Align)
 	} else {
-		return constructBeautifulSeparatorLine(colsCount, cfg.excludedColumnsIndices, maxLens, cfg.Align)
+		return constructBeautifulSeparatorLine(colsCount, cfg, maxLenOfCol)
 	}
 }
 
 // Construct a well-formatted separator line
-func constructBeautifulSeparatorLine(colsCount int, excludedColumnsIndices []int, maxLens []int, align Align) string {
+func constructBeautifulSeparatorLine(colsCount int, cfg Config, maxLenOfCol []int) string {
+	indicesToIterate := make([]int, colsCount)
+	if cfg.SortColumns == None {
+		for i := range colsCount {
+			indicesToIterate[i] = i
+		}
+	} else {
+		copy(indicesToIterate, cfg.columnsIndicesAfterSorting)
+	}
+
 	separatorLine := "| "
-	for i := range colsCount {
+
+	for _, i := range indicesToIterate {
 		// If current column is excluded, ignore it
-		if slices.Contains(excludedColumnsIndices, i) {
+		if slices.Contains(cfg.excludedColumnsIndices, i) {
 			continue
 		}
 
 		dashes := ""
 		// loop through max length of each column and add dashes
-		for range maxLens[i] {
+		for range maxLenOfCol[i] {
 			dashes += "-"
 		}
-		switch align {
+		switch cfg.Align {
 		case Left:
 			// replace the first dash with a colon. This makes the rendered table align text on the left hand side
 			dashes = strings.Replace(dashes, "-", ":", 1)
