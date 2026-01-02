@@ -404,6 +404,23 @@ func TestConvertExcludeNoColumn(t *testing.T) {
 	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
 }
 
+func TestConvertSortColumnsNone(t *testing.T) {
+	cfg := createGenericConfig()
+	cfg.SortColumns = None
+
+	expected := `| First name | Last name |        Email         |    Phone     |
+| :--------: | :-------: | :------------------: | :----------: |
+|    Jane    |   Smith   | jane.smith@email.com | 555-555-1212 |
+|    John    |    Doe    |  john.doe@email.com  | 555-555-3434 |
+|   Alice    |  Wonder   | alice@wonderland.com | 555-555-5656 |`
+
+	res, err := Convert(csvString, cfg)
+
+	assert.Nil(t, err, "Convert with sorted columns none should not return a non-nil error")
+
+	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
+}
+
 func TestConvertSortColumnsAscending(t *testing.T) {
 	cfg := createGenericConfig()
 	cfg.SortColumns = Ascending
@@ -434,6 +451,26 @@ func TestConvertSortColumnsDescending(t *testing.T) {
 	res, err := Convert(csvString, cfg)
 
 	assert.Nil(t, err, "Convert with sorted columns descending should not return a non-nil error")
+
+	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
+}
+
+func TestConvertSortColumnsCustom(t *testing.T) {
+	cfg := createGenericConfig()
+	cfg.SortColumns = Custom
+	cfg.SortFunction = func (a, b string) int {
+		return len(a) - len(b)
+	}
+
+	expected := `|        Email         |    Phone     | Last name | First name |
+| :------------------: | :----------: | :-------: | :--------: |
+| jane.smith@email.com | 555-555-1212 |   Smith   |    Jane    |
+|  john.doe@email.com  | 555-555-3434 |    Doe    |    John    |
+| alice@wonderland.com | 555-555-5656 |  Wonder   |   Alice    |`
+
+	res, err := Convert(csvString, cfg)
+
+	assert.Nil(t, err, "Convert with sorted columns custom should not return a non-nil error")
 
 	assert.Equal(t, expected, res, STRINGS_SHOULD_BE_THE_SAME)
 }
