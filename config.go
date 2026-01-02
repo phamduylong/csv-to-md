@@ -3,6 +3,8 @@ package csv2mdtable
 import (
 	"errors"
 	"log/slog"
+	"slices"
+	"strings"
 )
 
 type Align int
@@ -15,10 +17,13 @@ const (
 
 type ColumnSortOption int
 
+type ColumnSortFunction func(a string, b string) int
+
 const (
 	None       ColumnSortOption = 0
 	Ascending  ColumnSortOption = 1
 	Descending ColumnSortOption = 2
+	Custom     ColumnSortOption = 3
 )
 
 type Config struct {
@@ -41,11 +46,14 @@ type Config struct {
 	// Indices of excluded columns (internal)
 	excludedColumnsIndices []int
 
-	// Indices of original columns in sorted list (internal)
-	columnsIndicesAfterSorting []int
+	// Indices of columns to convert to
+	orderedColumnsIndices []int
 
 	// Should the columns be sorted and how?
 	SortColumns ColumnSortOption
+
+	// Custom sort function
+	SortFunction ColumnSortFunction
 
 	// Log detailed diagnostic messages when running the program.
 	VerboseLogging bool
@@ -93,6 +101,8 @@ type CSVReaderConfig struct {
 // Validate the Config object passed as parameter.
 // An error will be returned in case the configuration was invalid.
 func ValidateConfig(cfg Config) error {
+	configMalformed := false
+
 	if cfg.VerboseLogging {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 		slog.Debug("Validating config 🤔")
@@ -102,9 +112,78 @@ func ValidateConfig(cfg Config) error {
 		return errors.New("align value is out of range, please choose in range [0-2]")
 	}
 
-	if cfg.VerboseLogging {
+	if cfg.SortColumns < None || cfg.SortColumns > Custom {
+		return errors.New("sort columns value is out of range, please choose in range [0-3]")
+	}
+
+	if cfg.SortColumns == Custom && cfg.SortFunction == nil {
+		return errors.New("sort type is set to Custom but SortFunc was not set.")
+	}
+
+	// function passed in but not sort type is not custom
+	if cfg.SortColumns != Custom && cfg.SortFunction != nil {
+		configMalformed = true
+		slog.Warn("Sort function only works when SortColumns is set to Custom. SortColumns received is " + SortColumnsToString(cfg.SortColumns) + ", ignoring SortFunc.")
+	}
+
+	if cfg.VerboseLogging && !configMalformed {
 		slog.Debug("Config is valid ✅")
 	}
 
 	return nil
+}
+
+func SortColumnsToString(val ColumnSortOption) string {
+	switch val {
+	case None:
+		return "None"
+	case Ascending:
+		return "Ascending"
+	case Descending:
+		return "Descending"
+	case Custom:
+		return "Custom"
+	}
+
+	return ""
+}
+
+// Populate orderColumnIndices in Config object
+func populateColumnIndices(cfg Config, headerLine []string) Config {
+	// get the new order of columns after sorted, compared to the original order of them.
+	if cfg.SortColumns == None {
+		for i := range len(headerLine) {
+			cfg.orderedColumnsIndices = append(cfg.orderedColumnsIndices, i)
+		}
+	} else {
+		cfg.orderedColumnsIndices = getIndicesAfterSorting(cfg, headerLine)
+	}
+
+	return cfg
+}
+
+// Get the indices of columns after sorted
+func getIndicesAfterSorting(cfg Config, headerLine []string) []int {
+	sortedColumns := make([]string, len(headerLine))
+	copy(sortedColumns, headerLine)
+	var columnsIndicesAfterSorting []int
+
+	switch cfg.SortColumns {
+	case Ascending:
+		slices.SortFunc(sortedColumns, func(a, b string) int {
+			return strings.Compare(strings.ToLower(a), strings.ToLower(b))
+		})
+	case Descending:
+		slices.SortFunc(sortedColumns, func(a, b string) int {
+			return strings.Compare(strings.ToLower(b), strings.ToLower(a))
+		})
+	case Custom:
+		slices.SortFunc(sortedColumns, cfg.SortFunction)
+	}
+
+	for i := range sortedColumns {
+		columnsIndicesAfterSorting = append(columnsIndicesAfterSorting, slices.Index(headerLine, sortedColumns[i]))
+	}
+
+	return columnsIndicesAfterSorting
 }
