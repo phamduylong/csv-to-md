@@ -8,7 +8,6 @@ This is a utility tool used to convert [Comma-separated values (CSV)](https://en
   - [Table Of Contents](#table-of-contents)
   - [Usage](#usage)
   - [Configuration Options](#configuration-options)
-  - [Performance](#performance)
 
 ## Usage
 
@@ -67,29 +66,19 @@ Program exited.
 
 The program offers a range of different configuration options to customize the tool to best fit your use case.
 
-| Option                           | Type             | What does it do? |
-| -------------------------------- | ---------------- | ---------------- |
-| Align                            | Align            | Align the text on the rendered table. Visual feedback on the markdown syntax is also provided. |
-| Caption                          | string           | Set a caption for the table (will be rendered as an HTML comment above the table). |
-| Compact                          | bool             | Set whether the Markdown table be converted to compact syntax. |
-| CSVReaderConfig                  | CSVReaderConfig  | Config options to be passed into CSV reader object. See [type Reader in the encoding/csv module](https://pkg.go.dev/encoding/csv#Reader). |
-| CSVReaderConfig.Comma            | rune             | Set the delimiter of the CSV reader. |
-| CSVReaderConfig.Comment          | rune             | Set the comment character for the CSV reader. |
-| CSVReaderConfig.FieldsPerRecord  | int              | Set the amount of fields per CSV row. |
-| CSVReaderConfig.LazyQuotes       | bool             | Set whether lazy quotes are allowed. If lazy quotes are allowed, a quote may appear in an unquoted field and a non-doubled quote may appear in a quoted field. |
-| CSVReaderConfig.TrimLeadingSpace | bool             | Set whether leading space before the fields' values should be ignored. |
-| CSVReaderConfig.ReuseRecord      | bool             | Set whether calls to Read may return a slice sharing the backing array of the previous call's returned slice for performance. By default, each call to Read returns newly allocated memory owned by the caller. |
-| ExcludedColumns                  | []string         | Set the list of columns that should be ignored when constructing the table. |
-| SortColumns                      | ColumnSortOption | Should the columns be sorted and how? |
-| VerboseLogging                   | bool             | Log detailed diagnostic messages when running the program. |
-
-## Performance
-
-*I did not create a very proper setup to measure the performance. Ran it with my own PC so take it with a grain of salt.*
-
-| Rows    | Columns | Average Execution Time (5 runs) |
-| ------- | ------- | ------------------------------- |
-| 100     | 12      | 1,8ms                           |
-| 1.000   | 12      | 37ms                            |
-| 10.000  | 12      | 2,4s                            |
-| 100.000 | 12      | 249s                            |
+| Option                           | Type               | What does it do? |
+| -------------------------------- | ------------------ | ---------------- |
+| Align                            | Align              | Align the text on the rendered table. Visual feedback on the markdown syntax is also provided. |
+| Caption                          | string             | Set a caption for the table (will be rendered as an HTML comment above the table). |
+| Compact                          | bool               | Set whether the Markdown table be converted to compact syntax. |
+| CSVReaderConfig                  | CSVReaderConfig    | Config options to be passed into CSV reader object. See [type Reader in the encoding/csv module](https://pkg.go.dev/encoding/csv#Reader). |
+| CSVReaderConfig.Comma            | rune               | Set the delimiter of the CSV reader. |
+| CSVReaderConfig.Comment          | rune               | Set the comment character for the CSV reader. |
+| CSVReaderConfig.FieldsPerRecord  | int                | Set the amount of fields per CSV row. |
+| CSVReaderConfig.LazyQuotes       | bool               | Set whether lazy quotes are allowed. If lazy quotes are allowed, a quote may appear in an unquoted field and a non-doubled quote may appear in a quoted field. |
+| CSVReaderConfig.TrimLeadingSpace | bool               | Set whether leading space before the fields' values should be ignored. |
+| CSVReaderConfig.ReuseRecord      | bool               | Set whether calls to Read may return a slice sharing the backing array of the previous call's returned slice for performance. By default, each call to Read returns newly allocated memory owned by the caller. |
+| ExcludedColumns                  | []string           | Set the list of columns that should be ignored when constructing the table. |
+| SortColumns                      | ColumnSortOption   | Should the columns be sorted and how? |
+| SortFunction                     | ColumnSortFunction | How should the columns be sorted? *This option will be ignored if SortColumns is not set to `Custom`.* |
+| VerboseLogging                   | bool               | Log detailed diagnostic messages when running the program. |
